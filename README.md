@@ -19,7 +19,8 @@ roslaunch netft_rdt_driver netft.launch
 
 ## ROS Services and Topics
 
-Once launched, there are [NEED TO FILL THIS IN]. The service `/netft/zero` takes no arguments and zeros the readings of the sensor. 
+Once launched, there is one rostopic for reading the state of the sensor (`/netft/netft_data` which outputs a rostopic of type geometry_msgs/WrenchStamped), one rosservice for zeroing the readings of the sensor (`/netft/zero` which takes no arguments) and two rosservices related to logging (`/netft/netft/get_loggers` and 
+`/netft/netft/set_logger_level`).
 
 ## Scripts
 
