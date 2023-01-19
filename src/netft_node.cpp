@@ -39,6 +39,7 @@
 
 #include "ros/ros.h"
 #include "netft_rdt_driver/netft_rdt_driver.h"
+#include "std_srvs/Empty.h"
 #include "geometry_msgs/WrenchStamped.h"
 #include "geometry_msgs/Wrench.h"
 #include "diagnostic_msgs/DiagnosticArray.h"
@@ -47,7 +48,6 @@
 #include <iostream>
 #include <memory>
 #include <boost/program_options.hpp>
-#include "netft_rdt_driver/Zero.h"
 
 namespace po = boost::program_options;
 using namespace std;
@@ -57,8 +57,8 @@ bool setzero = false;
 const int total_setzero_cnt = 100;
 int setzero_cnt = 0;
 
-bool zero(netft_rdt_driver::Zero::Request  &req,
-          netft_rdt_driver::Zero::Response &res){
+bool zero(std_srvs::Empty::Request  &req,
+          std_srvs::Empty::Response &res){
   setzero = true;
   
   // ros::Rate wait_rate(1);
