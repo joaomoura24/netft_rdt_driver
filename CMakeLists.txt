@@ -1,7 +1,14 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(netft_rdt_driver)
 
-find_package(catkin REQUIRED COMPONENTS roscpp diagnostic_updater diagnostic_msgs message_generation)
+find_package(catkin REQUIRED COMPONENTS
+  roscpp
+  diagnostic_updater
+  diagnostic_msgs
+  message_generation
+  actionlib
+  actionlib_msgs
+)
 
 find_package(
   Boost REQUIRED COMPONENTS system thread program_options
@@ -14,9 +21,17 @@ add_service_files(DIRECTORY srv FILES
   Zero.srv
 )
 
-generate_messages()
-
-catkin_package()
+# for actionlib
+add_action_files(
+    DIRECTORY action
+    FILES Zero.action
+)
+generate_messages(
+    DEPENDENCIES actionlib_msgs
+)
+catkin_package(
+  CATKIN_DEPENDS actionlib_msgs
+)
 
 message("Boost_LIBRARIES " ${Boost_LIBRARIES})
 message("Boost_INCLUDE_DIRS " ${Boost_INCLUDE_DIRS})
@@ -30,4 +45,4 @@ add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencpp)
 # Stand-alone ROS node that uses driver library 
 add_executable(netft_node src/netft_node.cpp)
 target_link_libraries(netft_node ${PROJECT_NAME}  ${catkin_LIBRARIES} ${Boost_LIBRARIES})
-add_dependencies(netft_node ${PROJECT_NAME})
+add_dependencies(netft_node ${PROJECT_NAME} ${netft_rdt_driver_EXPORTED_TARGETS})

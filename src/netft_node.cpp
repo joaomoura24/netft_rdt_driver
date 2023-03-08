@@ -48,6 +48,8 @@
 #include <iostream>
 #include <memory>
 #include <boost/program_options.hpp>
+#include <actionlib/server/simple_action_server.h>
+#include <netft_rdt_driver/ZeroAction.h>
 
 namespace po = boost::program_options;
 using namespace std;
@@ -56,20 +58,21 @@ geometry_msgs::Wrench offsets;
 bool setzero = false;
 const int total_setzero_cnt = 100;
 int setzero_cnt = 0;
+bool accepted_goal = false;
+netft_rdt_driver::ZeroResult result_;
 
 bool zero(std_srvs::Empty::Request  &req,
           std_srvs::Empty::Response &res){
   setzero = true;
   
-  // ros::Rate wait_rate(1);
-  // while (ros::ok())
-  // {
-    // if(!setzero)
-      // break;
-    // //printf("setzero %d\n", setzero);
-    // wait_rate.sleep();
-  // }
   return true;
+}
+
+void goal_cb(){
+  setzero = true;
+  setzero_cnt = 0;
+  result_.success = true;
+  accepted_goal = true;
 }
 
 int main(int argc, char **argv)
@@ -78,6 +81,10 @@ int main(int argc, char **argv)
   ros::NodeHandle nh;
   ros::ServiceServer service = nh.advertiseService("zero", zero);
 
+  actionlib::SimpleActionServer<netft_rdt_driver::ZeroAction> actionserver(nh, "zero", false);
+  actionserver.registerGoalCallback(&goal_cb);
+  result_.success = false;
+  actionserver.start();
 
   float pub_rate_hz;
   string address;
@@ -120,7 +127,7 @@ int main(int argc, char **argv)
     ROS_WARN("Publishing NetFT data as geometry_msgs::Wrench is deprecated");
   }
 
-  std::auto_ptr<netft_rdt_driver::NetFTRDTDriver> netft(new netft_rdt_driver::NetFTRDTDriver(address, frame_id));
+  std::shared_ptr<netft_rdt_driver::NetFTRDTDriver> netft(new netft_rdt_driver::NetFTRDTDriver(address, frame_id));
   ros::Publisher pub;
   if (publish_wrench)
   {
@@ -147,6 +154,15 @@ int main(int argc, char **argv)
       netft->getData(data);
       if(setzero){
         printf("Calibrating %d / %d\n", setzero_cnt, total_setzero_cnt);
+        if(accepted_goal){
+          accepted_goal = false;
+          actionserver.acceptNewGoal();
+        }
+        if(actionserver.isPreemptRequested()){
+          actionserver.setPreempted();
+          result_.success = false;
+          setzero = false;
+        }
         if(setzero_cnt == 0){
           offsets = data.wrench;
           setzero_cnt++;
@@ -162,7 +178,6 @@ int main(int argc, char **argv)
           setzero_cnt++;
         }
         else{
-          setzero = false;
           offsets.force.x /= total_setzero_cnt;
           offsets.force.y /= total_setzero_cnt;
           offsets.force.z /= total_setzero_cnt;
@@ -170,6 +185,10 @@ int main(int argc, char **argv)
           offsets.torque.y /= total_setzero_cnt;
           offsets.torque.z /= total_setzero_cnt;
           setzero_cnt = 0;
+          setzero = false;
+          if(result_.success){
+            actionserver.setSucceeded(result_);
+          }
         }
       }
       else{
