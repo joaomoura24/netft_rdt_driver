@@ -81,7 +81,7 @@ int main(int argc, char **argv)
   ros::NodeHandle nh;
   ros::ServiceServer service = nh.advertiseService("zero", zero);
 
-  actionlib::SimpleActionServer<netft_rdt_driver::ZeroAction> actionserver(nh, "zero", false);
+  actionlib::SimpleActionServer<netft_rdt_driver::ZeroAction> actionserver(nh, "zero_driver", false);
   actionserver.registerGoalCallback(&goal_cb);
   result_.success = false;
   actionserver.start();
